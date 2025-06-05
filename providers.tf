@@ -9,6 +9,7 @@ terraform {
 
 provider "aws" {
   # Use o perfil 'development' do arquivo ~/.aws/credentials
+
   region = var.aws_region
 
   # Configurações específicas para LocalStack (se var.is_localstack_env for true)

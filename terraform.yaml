@@ -1,0 +1,73 @@
+name: 'Terraform CI/CD'
+
+on:
+  push:
+    branches-ignore:
+      - development
+  pull_request: # Executa em pull requests para a branch main
+    branches:
+      - master
+
+permissions:
+  id-token: write # Necessário para autenticação OIDC com AWS
+  contents: read  # Necessário para fazer checkout do código
+  pull-requests: write # Necessário para comentar o plano no PR
+
+jobs:
+  terraform:
+    name: 'Terraform'
+    runs-on: ubuntu-latest
+    env:
+      TF_VAR_s3_bucket_name: ${{ secrets.S3_BUCKET_NAME }}
+      AWS_REGION: ${{ env.AWS_REGION }} # Sua região AWS
+      TF_VAR_aws_region: ${{ env.AWS_REGION }} # Passa a região para suas variáveis Terraform
+      # Adicione outras TF_VAR_* conforme necessário para suas variáveis Terraform
+      # Exemplo: Se você quiser controlar o ambiente via workflow
+      # TF_VAR_environment: "dev"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }} # ARN do seu IAM Role para GitHub Actions
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "~1.12.1" # Especifique sua versão do Terraform (consistente com seu .tfstate)
+
+      - name: Terraform Init
+        run: terraform init
+
+      - name: Terraform Validate
+        run: terraform validate
+
+      - name: Terraform Plan
+        id: plan
+        run: terraform plan -no-color -input=false -out=tfplan
+        # Para PRs, você pode querer adicionar o plano como um comentário.
+        # Veja a seção "Melhorias Sugeridas" abaixo.
+
+      - name: Terraform Apply (Apenas na branch master)
+        if: github.ref == 'refs/heads/master' && github.event_name == 'push' # Condição para aplicar
+        run: terraform apply -auto-approve -input=false tfplan
+        # Para produção, considere usar ambientes do GitHub com aprovações manuais.
+
+# Seção para adicionar o plano como comentário no PR (descomente e ajuste se desejar)
+#      - name: Comment PR with Terraform Plan
+#        if: github.event_name == 'pull_request'
+#        uses: actions/github-script@v6
+#        with:
+#          github-token: ${{ secrets.GITHUB_TOKEN }}
+#          script: |
+#            const output = `#### Terraform Plan 📖\n\`\`\`\n${{ steps.plan.outputs.stdout }}\n\`\`\``;
+#            github.rest.issues.createComment({
+#              issue_number: context.issue.number,
+#              owner: context.repo.owner,
+#              repo: context.repo.repo,
+#              body: output
+#            });
