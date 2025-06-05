@@ -19,8 +19,8 @@ jobs:
     runs-on: ubuntu-latest
     env:
       TF_VAR_s3_bucket_name: ${{ secrets.S3_BUCKET_NAME }}
-      AWS_REGION: ${{ env.AWS_REGION }} # Sua região AWS
-      TF_VAR_aws_region: ${{ env.AWS_REGION }} # Passa a região para suas variáveis Terraform
+      AWS_REGION: ${{ secrets.AWS_REGION }} # Sua região AWS
+      TF_VAR_aws_region: ${{ secrets.AWS_REGION }} # Passa a região para suas variáveis Terraform
       # Adicione outras TF_VAR_* conforme necessário para suas variáveis Terraform
       # Exemplo: Se você quiser controlar o ambiente via workflow
       # TF_VAR_environment: "dev"
