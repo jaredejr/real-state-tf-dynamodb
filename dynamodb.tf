@@ -1,5 +1,5 @@
 resource "aws_dynamodb_table" "cad_company" {
-  name         = "${var.dynamodb_table_name_db_cad_company}-${var.environment}" # Usa a nova variável para o nome base
+  name         = "${var.db_cad_company_table_name}-${var.environment}" # Usa a variável padronizada
   billing_mode = "PAY_PER_REQUEST"                                             # Ou PROVISIONED
 
   attribute {
